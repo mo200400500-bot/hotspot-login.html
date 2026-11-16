@@ -1,0 +1,114 @@
+window.siteConfig = {
+    "siteName": "فري ماركت",
+    "welcomeMessage": "مرحبا بكم في شبكةفري ماركت اللاسلكية",
+    "welcomeMessageV": true,
+    "textSlider1": "فري هي شبكة إنترنت متطورة تقدم خدمات الإنترنت عالي السرعة للمستخدمين. نحن نسعى لتوفير أفضل تجربة إنترنت بأسعار مناسبة وخدمة عملاء متميزة.",
+    "speedOptions": [
+        {
+            "value": "",
+            "name": "كرت هوتسبوت",
+            "default": false,
+            "visible": true
+        },
+        {
+            "value": "256k/512k",
+            "name": "سرعة اقتصادية",
+            "default": false,
+            "visible": true
+        },
+        {
+            "value": "512k/1024k",
+            "name": "سرعة عادية",
+            "default": false,
+            "visible": true
+        },
+        {
+            "value": "768k/2048k",
+            "name": "سرعة متوسطة",
+            "default": true,
+            "visible": true
+        },
+        {
+            "value": "1024k/4096k",
+            "name": "سرعة عالية",
+            "default": false,
+            "visible": false
+        },
+        {
+            "value": "2048k/8192k",
+            "name": "سرعة عالية جدا",
+            "default": false,
+            "visible": false
+        },
+        {
+            "value": "",
+            "name": "",
+            "default": false,
+            "visible": false
+        },
+        {
+            "value": "",
+            "name": "",
+            "default": false,
+            "visible": false
+        }
+    ],
+    "imageCount": "3",
+    "imageV": true,
+    "packages": [
+        {
+            "title": "100 ريال",
+            "time": "4 ساعات",
+            "size": "300 ميجا بايت",
+            "speed": "اختيارية",
+            "price": "3ايام"
+        },
+        {
+            "title": "150ريال",
+            "time": "10 ساعة",
+            "size": "450 ميجا بايت",
+            "speed": "اختيارية",
+            "price": "أيام3"
+        },
+        {
+            "title": "200ريال",
+            "time": "10ساعة",
+            "size": "600 ميجا بايت",
+            "speed": "اختيارية",
+            "price": "5 ايام"
+        },
+        {
+            "title": "300 ريال",
+            "time": "15ساعة",
+            "size": "1 جيجا بايت",
+            "speed": "اختيارية",
+            "price": "7ايام"
+        },
+        {
+            "title": "500 ريال",
+            "time": "مفتوح",
+            "size": "2 جيجا بايت",
+            "speed": "اختيارية",
+            "price": "30يوم"
+        }
+    ],
+    "offers": "...",
+    "salesPoints": [
+        "جميع البقالات المجاورة للشبكة",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "note": [
+        "يجب استخدام الخدمة للأغراض القانونية فقط",
+        "ممنوع مشاركة بيانات الحساب مع الآخرين",
+        "للمحافظة على الرصيد يجب ايقاف التحديثات التلقائية لجوجل بلاي",
+        "محاولة استخدام برامج الاختراق يعرضك للملاحقة القانونية والحظر الكلي من الشبكة"
+    ],
+    "estr": "",
+    "moba": "http://89.117.50.191:8087/watch/fibernet_lamsports_003"
+};
