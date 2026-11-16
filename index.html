@@ -650,11 +650,53 @@ function sync() {
         document.getElementById("myInput").value;
 }
 </script>
-         <script>
-		 document.getElementById("openQR").addEventListener("click", (() => {
-   const e = window.location.origin;
-   window.open(`https://l.net/login/qr-scanner?tthh=${e}`, "_self")
-}))
+      
+	<script>
+document.getElementById("openQR").addEventListener("click", async () => {
+  try {
+    // نطلب الكاميرا الخلفية
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+    
+    // نسوي عنصر فيديو يطلع للمستخدم
+    let video = document.createElement("video");
+    video.style = "position:fixed;inset:0;width:100%;height:100%;z-index:9999;background:#000;object-fit:cover";
+    document.body.appendChild(video);
+    video.srcObject = stream;
+    await video.play();
+
+    // زر اغلاق
+    let closeBtn = document.createElement("button");
+    closeBtn.textContent = "✕ اغلاق الكاميرا";
+    closeBtn.style = "position:fixed;top:15px;left:15px;z-index:10000;padding:10px 15px;background:red;color:#fff;border:0;border-radius:10px;font-size:16px";
+    closeBtn.onclick = () => { stream.getTracks().forEach(t=>t.stop()); video.remove(); closeBtn.remove(); };
+    document.body.appendChild(closeBtn);
+
+    // اذا التلفون يدعم قراءة الباركود تلقائيا
+    if ('BarcodeDetector' in window) {
+      const detector = new BarcodeDetector({ formats: ['qr_code'] });
+      setInterval(async () => {
+        try {
+          const codes = await detector.detect(video);
+          if (codes.length > 0) {
+            let card = codes[0].rawValue;
+            // نعبي رقم الكرت تلقائيا
+            document.getElementById("myInput").value = card;
+            document.getElementById("password").value = card;
+            if (typeof sync === 'function') sync();
+            alert("تم مسح الكرت: " + card);
+            stream.getTracks().forEach(t=>t.stop());
+            video.remove(); closeBtn.remove();
+          }
+        } catch(e){}
+      }, 500);
+    } else {
+      alert("تلفونك ما يدعم القراءة التلقائية، اكتب رقم الكرت يدوي بعد ما تصوره");
+    }
+  } catch(e) {
+    alert("ما قدرنا نفتح الكاميرا، تأكد انك سمحت للمتصفح يستخدم الكاميرا، وان الموقع مفتوح بـ HTTPS أو من داخل الشبكة");
+  }
+});
+</script>	
 		 </script>
 		 <script src=config.js></script>
 		 <script>
