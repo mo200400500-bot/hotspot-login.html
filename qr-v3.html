@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101827">
+<title>STAR NET - ماسح البطاقات</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#0b1220;color:#f8fafc;font-family:Tahoma,Arial,sans-serif;padding:14px}
+main{max-width:540px;margin:auto;background:#1d293b;border:1px solid #40516a;border-radius:18px;padding:16px}
+h1{text-align:center;font-size:22px;margin:5px}p{color:#cbd5e1;text-align:center;line-height:1.7;font-size:14px}
+.stage{position:relative;overflow:hidden;background:#020617;border-radius:14px;margin:12px 0}
+video{display:block;width:100%;height:min(58vh,440px);min-height:250px;object-fit:cover}
+.frame{position:absolute;left:12%;right:12%;top:15%;bottom:15%;border:3px solid #22c55e;border-radius:16px;box-shadow:0 0 0 999px #0003;pointer-events:none}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+button,.filelabel{border:0;border-radius:11px;padding:13px 10px;color:white;font-size:15px;font-weight:bold;text-align:center;cursor:pointer;display:block;width:100%;margin-top:9px}
+#start,#use{background:#16a34a}#stop{background:#475569}#torch{background:#7c3aed}#back{background:#334155}.filelabel{background:#2563eb}
+.zoom{margin:12px 2px;padding:10px;background:#0f172a;border-radius:12px}
+.zoomrow{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px}
+input[type=range]{width:100%;margin-top:10px;accent-color:#22c55e}
+#status{background:#0f172a;border:1px solid #334155;border-radius:12px;padding:12px;text-align:center;line-height:1.7;margin-top:12px;min-height:48px}
+#result{direction:ltr;text-align:center;color:#86efac;font-size:21px;word-break:break-all;margin:10px 0}
+input[type=file]{display:none}small{display:block;text-align:center;color:#94a3b8;line-height:1.7;margin-top:12px}
+</style>
+</head>
+<body><main>
+<h1>ماسح بطاقات STAR NET</h1>
+<p>ضع رمز QR داخل الإطار الأخضر. ثبّت الهاتف لحظة، ويمكنك زيادة التقريب من شريط التكبير.</p>
+<div class="stage"><video id="video" autoplay playsinline muted></video><div class="frame"></div></div>
+<div class="zoom">
+ <div class="zoomrow"><label for="zoom">تقريب الكاميرا</label><strong id="zoomValue">1.0×</strong></div>
+ <input id="zoom" type="range" min="1" max="4" step="0.1" value="1">
+ <small id="zoomHelp">سيُستخدم تقريب الكاميرا إذا كان الهاتف يدعمه.</small>
+</div>
+<div class="controls">
+ <button id="start" type="button">بدء المسح</button>
+ <button id="stop" type="button">إيقاف الكاميرا</button>
+ <button id="torch" type="button">تشغيل الفلاش</button>
+ <label class="filelabel" for="imageFile">اختيار صورة QR</label>
+</div>
+<input id="imageFile" type="file" accept="image/*">
+<div id="status" role="status" aria-live="polite">اضغط «بدء المسح» واسمح بالكاميرا.</div>
+<div id="result"></div>
+<button id="use" type="button" hidden>تأكيد البطاقة والانتقال للدخول</button>
+<button id="back" type="button">العودة لصفحة الدخول</button>
+<small>المعالجة تتم داخل الهاتف. لا تُرسل صورة البطاقة إلى أي خادم. إذا كان الرمز صغيرًا، ارفع التقريب تدريجيًا.</small>
+</main>
+<canvas id="canvas" hidden></canvas>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>
+(function(){
+"use strict";
+var video=document.getElementById("video"),canvas=document.getElementById("canvas"),ctx=canvas.getContext("2d",{willReadFrequently:true});
+var status=document.getElementById("status"),result=document.getElementById("result"),useBtn=document.getElementById("use");
+var zoom=document.getElementById("zoom"),zoomValue=document.getElementById("zoomValue"),zoomHelp=document.getElementById("zoomHelp");
+var stream=null,track=null,raf=0,running=false,cardValue="",lastScan=0,torchOn=false,hardwareZoom=false,softZoom=1;
+function say(s){status.textContent=s;}
+function stopCamera(){running=false;if(raf)cancelAnimationFrame(raf);raf=0;if(stream)stream.getTracks().forEach(function(t){t.stop();});stream=null;track=null;torchOn=false;video.srcObject=null;}
+function extractUser(raw){
+ var v=String(raw||"").trim();
+ try{
+  if(/^https?:\/\//i.test(v)){var u=new URL(v);v=u.searchParams.get("username")||u.searchParams.get("user")||u.searchParams.get("login")||u.pathname.split("/").filter(Boolean).pop()||v;}
+  else if(/[?&](username|user|login)=/i.test(v)){var q=new URLSearchParams(v.replace(/^[^?]*\?/,""));v=q.get("username")||q.get("user")||q.get("login")||v;}
+ }catch(e){}
+ return String(v).replace(/^(username|user|login)\s*[:=]\s*/i,"").trim();
+}
+function found(raw){
+ var user=extractUser(raw);
+ if(!user||user.length>128){say("تم التعرف على رمز QR، لكن محتواه ليس رقم مستخدم صالحًا. لم يتم تسجيل الدخول.");return;}
+ cardValue=user;stopCamera();result.textContent="رقم البطاقة: "+user;useBtn.hidden=false;say("تمت قراءة البطاقة بنجاح. اضغط الزر الأخضر للانتقال إلى صفحة الدخول.");
+}
+async function setZoom(v){
+ var requested=Number(v);zoomValue.textContent=requested.toFixed(1)+"×";
+ if(track&&hardwareZoom){
+  try{await track.applyConstraints({advanced:[{zoom:requested}]});softZoom=1;zoomHelp.textContent="تقريب بصري من عدسة الكاميرا.";}
+  catch(e){hardwareZoom=false;softZoom=requested;zoomHelp.textContent="هذا الهاتف لا يتيح تقريب العدسة؛ يُستخدم قصّ رقمي للصورة.";}
+ }else{softZoom=requested;zoomHelp.textContent="تقريب رقمي للصورة؛ قد يقل الوضوح عند المبالغة.";}
+}
+function scanFrame(now){
+ if(!running)return;
+ if(now-lastScan>130&&video.readyState>=2&&video.videoWidth){
+  lastScan=now;
+  var sw=video.videoWidth,sh=video.videoHeight,cropW=sw/softZoom,cropH=sh/softZoom,sx=(sw-cropW)/2,sy=(sh-cropH)/2;
+  var scale=Math.min(1,1500/cropW),w=Math.max(1,Math.round(cropW*scale)),h=Math.max(1,Math.round(cropH*scale));
+  canvas.width=w;canvas.height=h;ctx.drawImage(video,sx,sy,cropW,cropH,0,0,w,h);
+  try{var d=ctx.getImageData(0,0,w,h),code=window.jsQR(d.data,w,h,{inversionAttempts:"attemptBoth"});if(code&&code.data){found(code.data);return;}}
+  catch(e){say("خطأ أثناء تحليل الصورة: "+(e.message||e));}
+ }
+ raf=requestAnimationFrame(scanFrame);
+}
+async function start(){
+ stopCamera();cardValue="";result.textContent="";useBtn.hidden=true;
+ if(typeof window.jsQR!=="function"){say("تعذر تحميل محرك قراءة QR. أعد فتح الصفحة مع اتصال الإنترنت.");return;}
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){say("المتصفح لا يدعم الكاميرا. استخدم اختيار صورة QR.");return;}
+ say("جارٍ تشغيل الكاميرا الخلفية…");
+ try{
+  stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:"environment"},width:{ideal:1920},height:{ideal:1080}}});
+  video.srcObject=stream;await video.play();track=stream.getVideoTracks()[0];
+  var caps=track.getCapabilities?track.getCapabilities():{};
+  hardwareZoom=!!(caps.zoom&&caps.zoom.max>caps.zoom.min);
+  if(hardwareZoom){zoom.min=Math.max(1,caps.zoom.min);zoom.max=Math.min(6,caps.zoom.max);zoom.step=0.1;zoom.value=Math.max(Number(zoom.min),1);softZoom=1;await setZoom(zoom.value);}
+  else{zoom.min=1;zoom.max=4;zoom.value=1;softZoom=1;zoomHelp.textContent="تقريب رقمي؛ التقريب البصري غير متاح في كاميرا هذا الهاتف.";}
+  if(track.applyConstraints){track.applyConstraints({advanced:[{focusMode:"continuous"}]}).catch(function(){});}
+  running=true;say("المسح نشط. قرّب الرمز داخل الإطار الأخضر وثبّت الهاتف.");raf=requestAnimationFrame(scanFrame);
+ }catch(e){stopCamera();say("تعذر تشغيل الكاميرا: "+(e.message||e));}
+}
+zoom.addEventListener("input",function(){setZoom(zoom.value);});
+document.getElementById("start").addEventListener("click",start);
+document.getElementById("stop").addEventListener("click",function(){stopCamera();say("تم إيقاف الكاميرا.");});
+document.getElementById("torch").addEventListener("click",async function(){
+ if(!track){say("ابدأ الكاميرا أولًا لتشغيل الفلاش.");return;}
+ var caps=track.getCapabilities?track.getCapabilities():{};
+ if(!caps.torch){say("الفلاش غير مدعوم من المتصفح أو الكاميرا.");return;}
+ try{torchOn=!torchOn;await track.applyConstraints({advanced:[{torch:torchOn}]});this.textContent=torchOn?"إيقاف الفلاش":"تشغيل الفلاش";}
+ catch(e){say("تعذر التحكم بالفلاش على هذا الهاتف.");}
+});
+document.getElementById("imageFile").addEventListener("change",function(e){
+ var file=e.target.files&&e.target.files[0];if(!file)return;
+ if(typeof window.jsQR!=="function"){say("محرك القراءة غير محمّل.");return;}
+ say("جارٍ تحليل الصورة محليًا…");var img=new Image();
+ img.onload=function(){var sc=Math.min(1,1800/img.width),w=Math.round(img.width*sc),h=Math.round(img.height*sc);canvas.width=w;canvas.height=h;ctx.drawImage(img,0,0,w,h);try{var d=ctx.getImageData(0,0,w,h),code=jsQR(d.data,w,h,{inversionAttempts:"attemptBoth"});if(code&&code.data)found(code.data);else say("لم يُعثر على QR. اختر صورة أوضح ويظهر فيها الرمز كاملًا.");}catch(err){say("تعذر تحليل الصورة: "+err.message);}};
+ img.onerror=function(){say("تعذر فتح الصورة.");};img.src=URL.createObjectURL(file);e.target.value="";
+});
+useBtn.addEventListener("click",function(){if(!cardValue)return;say("جارٍ فتح صفحة الدخول…");window.location.href="http://l.net/login?qruser="+encodeURIComponent(cardValue);});
+document.getElementById("back").addEventListener("click",function(){stopCamera();window.location.href="http://l.net/login";});
+window.addEventListener("pagehide",stopCamera);
+})();
+</script></body></html>
