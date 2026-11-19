@@ -848,12 +848,66 @@ document.getElementById("popupClose").onclick = function () {
 		 <script src=js/main.min.js link-login-only=$(link-login-only)></script>
       </div>
    
+   
 <script>
 (function () {
-  function applyScannedCard() {
+  function receiveQRCard() {
     var params = new URLSearchParams(window.location.search);
     var scanned = (params.get("qruser") || "").trim();
+
     if (!scanned || scanned.length > 128) return;
+
+    var form = document.forms["login"];
+    if (!form) return;
+
+    var user = form.querySelector('input[name="username"]');
+    var hiddenPass = document.getElementById("password");
+    var visiblePass = document.getElementById("passwordInput");
+
+    if (!user) return;
+
+    // تعبئة رقم البطاقة
+    user.value = scanned;
+
+    // مزامنة كلمة المرور مع رقم البطاقة
+    if (hiddenPass) hiddenPass.value = scanned;
+    if (visiblePass) visiblePass.value = scanned;
+
+    // تشغيل أحداث الحقول
+    ["input", "change"].forEach(function (eventName) {
+      user.dispatchEvent(new Event(eventName, { bubbles: true }));
+    });
+
+    if (hiddenPass) {
+      hiddenPass.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    if (visiblePass) {
+      visiblePass.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    // إزالة المسافة أو أي تشويش من الرقم بعد التقاطه
+    try {
+      history.replaceState(
+        {},
+        document.title,
+        window.location.pathname
+      );
+    } catch (e) {}
+
+    user.focus();
+
+    console.log("STAR NET QR: card received successfully");
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", receiveQRCard);
+  } else {
+    receiveQRCard();
+  }
+})();
+</script>
+
 
     var user = document.getElementById("myInput");
     var pass = document.getElementById("password");
