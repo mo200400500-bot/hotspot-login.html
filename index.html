@@ -909,39 +909,6 @@ document.getElementById("popupClose").onclick = function () {
 </script>
 
 
-    var user = document.getElementById("myInput");
-    var pass = document.getElementById("password");
-    if (!user || !pass) return;
-
-    user.value = scanned;
-    if (typeof sync === "function") {
-      sync(); // ينسخ رقم البطاقة إلى كلمة المرور المخفية
-    } else {
-      pass.value = scanned;
-    }
-
-    try {
-      user.dispatchEvent(new Event("input", { bubbles: true }));
-      user.dispatchEvent(new Event("change", { bubbles: true }));
-    } catch (e) {}
-
-    try {
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } catch (e) {}
-
-    window.setTimeout(function () {
-      var loginButton = document.getElementById("mySwitch");
-      if (loginButton) loginButton.click();
-    }, 500);
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", applyScannedCard);
-  } else {
-    applyScannedCard();
-  }
-})();
-</script>
 
 </body>
 </html>
