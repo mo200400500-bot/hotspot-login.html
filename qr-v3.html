@@ -121,7 +121,7 @@ document.getElementById("imageFile").addEventListener("change",function(e){
  img.onload=function(){var sc=Math.min(1,1800/img.width),w=Math.round(img.width*sc),h=Math.round(img.height*sc);canvas.width=w;canvas.height=h;ctx.drawImage(img,0,0,w,h);try{var d=ctx.getImageData(0,0,w,h),code=jsQR(d.data,w,h,{inversionAttempts:"attemptBoth"});if(code&&code.data)found(code.data);else say("لم يُعثر على QR. اختر صورة أوضح ويظهر فيها الرمز كاملًا.");}catch(err){say("تعذر تحليل الصورة: "+err.message);}};
  img.onerror=function(){say("تعذر فتح الصورة.");};img.src=URL.createObjectURL(file);e.target.value="";
 });
-useBtn.addEventListener("click",function(){if(!cardValue)return;say("جارٍ فتح صفحة الدخول…");window.location.href="http://l.net/login?qruser="+encodeURIComponent(cardValue);});
+useBtn.addEventListener("click",function(){if(!cardValue)return;say("جارٍ فتح صفحة الدخول…");window.location.href="http://l.net/index.html?qruser="+encodeURIComponent(cardValue);});
 document.getElementById("back").addEventListener("click",function(){stopCamera();window.location.href="http://l.net/login";});
 window.addEventListener("pagehide",stopCamera);
 })();
