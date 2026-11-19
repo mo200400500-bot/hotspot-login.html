@@ -898,6 +898,13 @@ document.getElementById("popupClose").onclick = function () {
     user.focus();
 
     console.log("STAR NET QR: card received successfully");
+	  setTimeout(function () {
+  var submitButton = document.getElementById("mySwitch");
+
+  if (submitButton && !submitButton.disabled) {
+    submitButton.click();
+  }
+}, 700);
   }
 
   if (document.readyState === "loading") {
