@@ -296,6 +296,9 @@ setZoom(zoom.value);
 });
 
 document.getElementById("start").addEventListener("click",start);
+  window.addEventListener("load", function () {
+  start();
+}, { once: true });
 
 document.getElementById("stop").addEventListener("click",function(){
 stopCamera();
